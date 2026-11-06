@@ -1,9 +1,7 @@
-
+#include "esp_bt_main.h"
+#include "esp_bt_device.h"
+#include "BluetoothSerial.h"
 #include <TinyGPS++.h>
-
-//IMPORTANT!!!!!
-//It is assumed that it's used Hardware Serial 2
-
 
 //TinyGPS stuff taken from the official TinyGPSPlusLibrary on github: https://github.com/MrRobotrick/GY-NEO6MV2_GPS_Module/tree/master
 
@@ -14,26 +12,55 @@ static const int TXPin = 18;
 static const uint32_t GPSBaud = 4800;
 
 //----Button module pin----
-static const int buttonPin = 0; //define
-static const int LEDPin = 0; //define
+static const int buttonPin = 34; //define
+static const int LEDPin = 32; //define
 
 int buttonState = 0;
 int case_state = 0;
+int command = 0;
 
 //The TinyGPS++ object
 TinyGPSPlus gps;
+
+//The bluetooth object
+BluetoothSerial SerialBT;
+
+//initializer of bluetooth: taken from the official documentation
+void printDeviceAddress() {
+  const uint8_t* point = esp_bt_dev_get_address();
+  for (int i = 0; i < 6; i++){
+    char str[3];
+    sprintf(str, "%02x", (int)point[i]);
+    Serial.print(str);
+    if(i < 5){
+      Serial.print(":");
+    }
+  }
+}
 
 //The serial connection to the GPS device
 HardwareSerial GPS_Serial(2);
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("Device started");
+  
+  //initialize GPS module
   GPS_Serial.begin(GPSBaud, SERIAL_8N1, RXPin, TXPin);
+  Serial.println("GPS initialized");
 
-  //This is not really essential is it? It's just occupying space
+  //initialize Bluetooth module
+  SerialBT.begin("Pretty Safe");
+  Serial.println("Bluetooth initialized");
+
   //Pin set-up
   pinMode(buttonPin, INPUT);
   pinMode(LEDPin, OUTPUT);
+
+  Serial.print("Maxaddr: ");
+  printDeviceAddress();
+
+  Serial.println(" ");
 
   Serial.println(F("Sats HDOP  Latitude   Longitude   Fix  Date       Time     Date Alt    Course Speed Card  Distance Course Card  Chars Sentences Checksum"));
   Serial.println(F("           (deg)      (deg)       Age                      Age  (m)    --- from GPS ----  ---- to London  ----  RX    RX        Fail"));
@@ -48,10 +75,16 @@ void loop() {
   //4 - cancel pin
   //5 - option buzzer
   readbluetooth();
+  //button_evaluator();
+  //Serial.write(command);
 
-  switch(){
+
+  //GPS_module();
+  /*
+  switch(case_state){
     case 1:
-      
+      SilentAlert();
+
       break;
     case 2:
     
@@ -66,17 +99,58 @@ void loop() {
 
       break;
   }
+  */
 
+  command = 0;
   //TODO: Make connection with the database to send the GPS data, and receive the necessary data to update the LED
 }
+
+int started = 0;
+long starting_time = 0;
+
+static long timepassed(long current_time){
+  if(started == 0){
+    starting_time = millis();
+  
+    started = 1;
+  }
+
+  return current_time - starting_time;
+}
+
+long passed_time = 0;
+
+int button_counter(){
+  passed_time = timepassed(millis());
+
+  //TODO: make the button interpreter
+  //aka detect the button press, during button press count time, else evaluate how many button presses have happened
+  if(passed_time > 10){
+    digitalWrite(LEDPin, LOW);
+    started = 0;
+  } else {
+    digitalWrite(LEDPin, HIGH);
+  }
+}
+
+int counter = 0;
+int button_State = 0;
 
 static void button_evaluator(){
   //TODO: read if the button is pressed and if yes for how long
   //use milis myb??
+  button_State = digitalRead(buttonPin);
+  
+  if(button_State == 1){
+    Serial.println("Button pressed");
+    if(counter == 0){
+      button_counter();
+    }
+  }
 }
 
 static void LED_state(int state){
-  //status machine that determines the behaviour of the LED
+  /*//status machine that determines the behaviour of the LED
   switch(state){
     case 1: //nothings happening
       digitalWrite(LEDPin, LOW);
@@ -84,7 +158,7 @@ static void LED_state(int state){
     case 2:
       //use millis to make it blink
       break;
-  }
+  }*/
 }
 
 static void GPS_module(){
@@ -111,7 +185,7 @@ static void smartDelay(unsigned long ms){
   do{
     while(GPS_Serial.available()){
       gps.encode(GPS_Serial.read());
-    }
+    } 
 
   }while(millis() - start < ms);
 }
@@ -176,6 +250,34 @@ static void printStr(const char *str, int len){
   }
 }
 
-static void readbluethooth(){
-  
+int state = 1;
+static void change_LED_state(){
+  digitalWrite(LEDPin, !state);
+}
+
+static void readbluetooth(){
+  /*OPTIONAL - outgoing data to bluetooth
+  if(Serial.available()) {
+    SerialBT.write(Serial.read());
+  }
+  */
+  //incoming data from bluetooth
+  if(SerialBT.available()) {
+    Serial.write(SerialBT.read()); //reads from bluetooth and imediatly writes it to Serial
+    command = SerialBT.read();
+
+    Serial.println("received command");
+    Serial.println(command);
+    switch(command){
+      case -1:
+        change_LED_state();
+        break;
+      case 2:
+        change_LED_state();
+        break;
+      case 50:
+        change_LED_state();
+        break;
+    }
+  }
 }
