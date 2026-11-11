@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/txtEstado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView" />
+
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Connect" />
+
+    <Button
+        android:id="@+id/btnLedOn"
+        android:layout_width="191dp"
+        android:layout_height="wrap_content"
+        android:text="Led On" />
+
+    <Button
+        android:id="@+id/btnLedOff"
+        android:layout_width="191dp"
+        android:layout_height="wrap_content"
+        android:text="Led Off" />
+</LinearLayout>
