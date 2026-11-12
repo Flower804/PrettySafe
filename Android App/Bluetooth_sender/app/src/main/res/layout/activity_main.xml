@@ -27,4 +27,16 @@
         android:layout_width="191dp"
         android:layout_height="wrap_content"
         android:text="Led Off" />
+
+    <TextView
+        android:id="@+id/tvLocalizacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LOCView" />
+
+    <Button
+        android:id="@+id/btnObterLocalizacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Obter Localizacao" />
 </LinearLayout>

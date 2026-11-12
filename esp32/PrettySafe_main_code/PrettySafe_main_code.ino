@@ -224,7 +224,7 @@ static void LED_state(int state) {
     case 1:
       digitalWrite(LEDPin, LOW);
       break;
-
+ 
     case 2:
       // LED blinking logic can be added later.
       break;

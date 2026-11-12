@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
@@ -19,9 +20,21 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import java.util.UUID
 
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+
 import android.os.ParcelUuid
 import android.bluetooth.le.ScanSettings
 import android.util.Log
+
+import android.os.Handler
+import android.os.Looper
 
 @SuppressLint("MissingPermission", "SetTextI18n")
 class MainActivity : AppCompatActivity() {
@@ -29,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnConnect: Button
     private lateinit var btnLedOn: Button
     private lateinit var btnLedOff: Button
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var tvLocalizacao: TextView
+    private lateinit var btnObterLocalizacao: Button
 
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
@@ -36,6 +52,8 @@ class MainActivity : AppCompatActivity() {
 
     private val SERVICE_UUID = UUID.fromString("19b10000-e8f2-537e-4f6c-d104768a1214")
     private val CHAR_UUID = UUID.fromString("19b10001-e8f2-537e-4f6c-d104768a1214")
+    private val MESSAGE_UUID = UUID.fromString("19b10002-e8f2-537e-4f6c-d104768a1214")
+    private var receivedCommand: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,44 +63,66 @@ class MainActivity : AppCompatActivity() {
         btnConnect = findViewById(R.id.btnConnect)
         btnLedOn = findViewById(R.id.btnLedOn)
         btnLedOff = findViewById(R.id.btnLedOff)
+        tvLocalizacao = findViewById(R.id.tvLocalizacao)
+        btnObterLocalizacao = findViewById(R.id.btnObterLocalizacao)
 
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
         bluetoothAdapter = bluetoothManager?.adapter
 
-        pedirPermissoesBLE()
+        pedirPermissoes()
+
+        //iniciar o cliente de localizacao
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         btnConnect.setOnClickListener { iniciarProcuraBLE() }
         btnLedOn.setOnClickListener { enviarComandoLED(1) }
         btnLedOff.setOnClickListener { enviarComandoLED(0) }
+
+        handler.post(locationRunnable)
+
+        /*
+        btnObterLocalizacao.setOnClickListener {
+            lerCoordenadasGPS()
+        }
+         */
     }
 
-    private fun pedirPermissoesBLE() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(this, arrayOf(
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ){ permissions ->
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val scanGranted = permissions[Manifest.permission.BLUETOOTH_SCAN] ?: false
+            val connectGranted = permissions[Manifest.permission.BLUETOOTH_CONNECT] ?: false
+
+            if (scanGranted && connectGranted) {
+                tvStatus.text = "Estado: Permissões Bluetooth concedidas"
+            } else {
+                tvStatus.text = "Estado: Permissões Bluetooth negadas"
+            }
+        } else {
+            val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+
+            if(locationGranted){
+                tvStatus.text = "Estado: Permissão de localização concedida"
+            } else {
+                tvStatus.text = "Estado: Permissão de localização negada"
+            }
+        }
+    }
+
+    private fun pedirPermissoes() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT
-            ), 1)
+            )
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(
+            arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ), 1)
+            )
         }
+        requestPermissionLauncher.launch(permissions)
     }
-
-    /*
-    private fun iniciarProcuraBLE() {
-        bluetoothGatt?.disconnect()
-        bluetoothGatt?.close()
-
-        if (bluetoothAdapter == null || bluetoothAdapter?.isEnabled == false) {
-            tvStatus.text = "Estado: Bluetooth desativado"
-            return
-        }
-
-        tvStatus.text = "Estado: A procura..."
-        bluetoothAdapter?.bluetoothLeScanner?.startScan(scanCallback)
-    }
-    */
 
      @SuppressLint("MissingPermission")
      private fun iniciarProcuraBLE(){
@@ -117,6 +157,39 @@ class MainActivity : AppCompatActivity() {
          }
      }
 
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val locationRunnable = object:Runnable {
+        override fun run() {
+            lerCoordenadasGPS()
+
+            handler.postDelayed(this, 5000)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun lerCoordenadasGPS() {
+        tvLocalizacao.text = "A procurar sinal de GPS..."
+
+        val priority = Priority.PRIORITY_HIGH_ACCURACY
+        val cancellationTokenSource = CancellationTokenSource()
+
+        fusedLocationClient.getCurrentLocation(priority, cancellationTokenSource.token).addOnSuccessListener { location ->
+            if(location != null){
+                val lat = location.latitude
+                val lon = location.longitude
+                tvLocalizacao.text = "Latitude: $lat \nLongitude: $lon"
+            } else {
+                tvLocalizacao.text = "Localizacao indisponivel"
+            }
+        }
+            .addOnFailureListener { e ->
+                Toast.makeText(this,
+                    "Erro: ${e.message}",
+                    Toast.LENGTH_SHORT)
+                    .show()
+            }
+    }
 
     private val scanCallback = object : ScanCallback() {
         override fun onBatchScanResults(results: MutableList<ScanResult>) {
@@ -156,14 +229,14 @@ class MainActivity : AppCompatActivity() {
                     false,
                     gattCallback
                 )
-            }u
+            }
         }
 
         override fun onScanFailed(errorCode: Int) {
             Log.e("PrettySafe", "SCAN FAILED: $errorCode")
 
             runOnUiThread {
-                tvStatus.text = "Estado: Erro de procura ($errorCode)"
+                tvStatus.text = "Est    ado: Erro de procura ($errorCode)"
             }
         }
     }
@@ -184,10 +257,42 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            if (characteristic.uuid == MESSAGE_UUID) {
+                receivedCommand = value
+                    .toString(Charsets.UTF_8)
+                    .toIntOrNull() ?: 0
+
+                runOnUiThread {
+                    tvStatus.text = "Estado: Comando recebido: $receivedCommand"
+                }
+            }
+        }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val service = gatt?.getService(SERVICE_UUID)
+                val messageCharacteristic = service?.getCharacteristic(MESSAGE_UUID)
+
+                if(messageCharacteristic != null){
+                    gatt?.setCharacteristicNotification(
+                        messageCharacteristic,
+                        true
+                    )
+
+                    val descriptor = messageCharacteristic.getDescriptor(
+                        UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+                    )
+
+                    descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+
+                    gatt?.writeDescriptor(descriptor)
+                }
+
                 ledCharacteristic = service?.getCharacteristic(CHAR_UUID)
                 runOnUiThread {
                     tvStatus.text = "Estado: Pronto a enviar comando"
@@ -217,5 +322,7 @@ class MainActivity : AppCompatActivity() {
         bluetoothGatt?.disconnect()
         bluetoothGatt?.close()
         bluetoothGatt = null
+
+        handler.removeCallbacks(locationRunnable)
     }
 }
