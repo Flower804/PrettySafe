@@ -8,6 +8,9 @@
 // BLE service and characteristic UUIDs
 #define SERVICE_UUID        "19b10000-e8f2-537e-4f6c-d104768a1214"
 #define CHARACTERISTIC_UUID "19b10001-e8f2-537e-4f6c-d104768a1214"
+#define MESSAGE_UUID "19b10002-e8f2-537e-4f6c-d104768a1214"
+
+BLECharacteristic* messageCharacteristic = nullptr;
 
 // BLE
 BLECharacteristic* switchCharacteristic = nullptr;
@@ -22,21 +25,22 @@ bool commandReceived = false;
 // Protect shared command data between BLE callback and loop
 portMUX_TYPE commandMux = portMUX_INITIALIZER_UNLOCKED;
 
-// GPS pins
-static const int RXPin = 5;
-static const int TXPin = 18;
-static const uint32_t GPSBaud = 4800;
-
 // Button and LED pins
-static const int buttonPin = 34;
+static const int buttonPin = 27;
 static const int LEDPin = 32;
 
 int buttonState = 0;
 int case_state = 0;
 
-// TinyGPS++
-TinyGPSPlus gps;
-HardwareSerial GPS_Serial(2);
+//cisjordania flower
+//pink roses
+//country blues
+
+//cutes
+//gerbera
+
+
+//dates should consist of an activity
 
 // ------------------------------------
 // BLE characteristic callbacks
@@ -93,35 +97,43 @@ void setup() {
   pinMode(LEDPin, OUTPUT);
   digitalWrite(LEDPin, LOW);
 
-  // Initialize GPS
-  GPS_Serial.begin(GPSBaud, SERIAL_8N1, RXPin, TXPin);
-  Serial.println("GPS initialized");
-
   // Initialize BLE
   BLEDevice::init("Pretty Safe");
 
   bleServer = BLEDevice::createServer();
   bleServer->setCallbacks(new ServerCallbacks());
-
   BLEService* ledService = bleServer->createService(SERVICE_UUID);
 
+  // Characteristic 1: Android -> ESP32
   switchCharacteristic = ledService->createCharacteristic(
-    CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ |
-    BLECharacteristic::PROPERTY_WRITE
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+      BLECharacteristic::PROPERTY_WRITE
   );
 
   switchCharacteristic->setCallbacks(new SwitchCallbacks());
   switchCharacteristic->setValue("0");
 
+  // Characteristic 2: ESP32 -> Android
+  messageCharacteristic = ledService->createCharacteristic(
+      MESSAGE_UUID,
+      BLECharacteristic::PROPERTY_READ |
+      BLECharacteristic::PROPERTY_NOTIFY
+  );
+
+  messageCharacteristic->setValue("0");
+
+  // Start service AFTER creating both characteristics
   ledService->start();
 
-  // Start BLE advertising
+  // Start advertising AFTER starting service
   BLEAdvertising* advertising = BLEDevice::getAdvertising();
 
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->setScanResponse(true);
   advertising->start();
+
+ 
 
   Serial.println("BLE initialized");
   Serial.println("Device name: Pretty Safe");
@@ -135,6 +147,11 @@ void setup() {
 // ------------------------------------
 
 void loop() {
+  buttonState = digitalRead(buttonPin);
+
+  if(buttonState == HIGH){
+    button_counter();
+  }
 
   // Check if Android sent a command
   int receivedCommand = -1;
@@ -170,9 +187,6 @@ void loop() {
         break;
     }
   }
-
-  // GPS and button functionality can be added here later.
-
 }
 
 // ------------------------------------
@@ -196,27 +210,18 @@ long passed_time = 0;
 void button_counter() {
   passed_time = timepassed(millis());
 
-  if (passed_time > 10) {
-    digitalWrite(LEDPin, LOW);
-    started = 0;
-  } else {
-    digitalWrite(LEDPin, HIGH);
+  if (passed_time > 3000) {
+    //Serial.println("time has passed");
+    send_message(1);
+    started = 1;
   }
 }
 
-int counter = 0;
-int button_State = 0;
+static void send_message(int value){
+  messageCharacteristic->setValue(std::to_string(value));
 
-static void button_evaluator() {
-  button_State = digitalRead(buttonPin);
-
-  if (button_State == 1) {
-    Serial.println("Button pressed");
-
-    if (counter == 0) {
-      button_counter();
-    }
-  }
+  messageCharacteristic->notify();
+  Serial.println("message sent");
 }
 
 static void LED_state(int state) {
