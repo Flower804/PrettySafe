@@ -257,6 +257,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -267,8 +268,18 @@ class MainActivity : AppCompatActivity() {
                     .toString(Charsets.UTF_8)
                     .toIntOrNull() ?: 0
 
-                runOnUiThread {
-                    tvStatus.text = "Estado: Comando recebido: $receivedCommand"
+                commandProcesser(receivedCommand)
+            }
+        }
+
+        fun commandProcesser(receivedcommand: Int){
+            runOnUiThread {
+                if(receivedCommand == 1){
+                    tvStatus.text = "Estado: Commando 1 recebido"
+                } else if(receivedCommand == 2){
+                    tvStatus.text = "Estado: Commando 2 alternativo recebido"
+                } else{
+                    tvStatus.text = "Estado: commando nao reconhecido recebido"
                 }
             }
         }
