@@ -145,13 +145,29 @@ void setup() {
 // ------------------------------------
 // Main loop
 // ------------------------------------
+int button_pressed = 0;
+//debugging
+int message_deb_sent = 0;
 
 void loop() {
   buttonState = digitalRead(buttonPin);
 
   if(buttonState == HIGH){
-    button_counter();
+    button_pressed = 1;
+    //debugging
+    if(!message_deb_sent){
+      Serial.println("Button pressed");
+      message_deb_sent = 1;
+    }
+  } else {
+    button_pressed = 0;
+    //debugging
+    if(message_deb_sent){
+      Serial.println("button unpressed");
+      message_deb_sent = 0;
+    }
   }
+  button_counter();
 
   // Check if Android sent a command
   int receivedCommand = -1;
@@ -192,17 +208,25 @@ void loop() {
 // ------------------------------------
 // Existing button functions
 // ------------------------------------
-
+int evaluation_ongoing = 0;
 int started = 0;
 long starting_time = 0;
 
 static long timepassed(long current_time) {
-  if (started == 0) {
+
+  if ((button_pressed == 1 ) && (started == 0)) {
     starting_time = millis();
     started = 1;
-  }
+    Serial.println("started counting time");
 
-  return current_time - starting_time;
+  } else if  ((button_pressed == 0) && (started == 1)){
+    started = 0;
+    evaluation_ongoing = 1;
+    Serial.println("finished counting time");
+    return current_time - starting_time;
+
+  }
+  return millis();
 }
 
 long passed_time = 0;
@@ -210,10 +234,16 @@ long passed_time = 0;
 void button_counter() {
   passed_time = timepassed(millis());
 
-  if (passed_time > 3000) {
-    //Serial.println("time has passed");
-    send_message(1);
-    started = 1;
+  if(evaluation_ongoing){
+    //TODO: change this into a switch case method
+    if ((passed_time >= 3000) && (passed_time < 5000)) {
+      Serial.println("3000 time has passed");
+      send_message(1);
+    } else if ((passed_time >= 5000)){
+      Serial.println("5000 time has passed");
+      send_message(2);
+    }
+    evaluation_ongoing = 0;
   }
 }
 
