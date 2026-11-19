@@ -36,6 +36,11 @@ import android.util.Log
 import android.os.Handler
 import android.os.Looper
 
+data class Login(
+    val username: String,
+    val password: String
+)
+
 @SuppressLint("MissingPermission", "SetTextI18n")
 class MainActivity : AppCompatActivity() {
     private lateinit var tvStatus: TextView
