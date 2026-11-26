@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Caixa de texto branca com borda rosa clara -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/branco" />
+    <stroke android:width="1dp" android:color="@color/rosa_borda" />
+    <corners android:radius="12dp" />
+</shape>

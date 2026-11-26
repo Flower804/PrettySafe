@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Principais cores -->
+    <color name="rosa_principal">#D4537E</color>   <!-- botões, destaques -->
+    <color name="rosa_medio">#993556</color>       <!-- subtítulos -->
+    <color name="rosa_escuro">#72243E</color>      <!-- títulos e rótulos -->
+    <color name="rosa_claro">#FBEAF0</color>       <!-- fundo do logótipo -->
+    <color name="rosa_borda">#F4C0D1</color>       <!-- borda das caixas de texto -->
+    <color name="cinza_texto">#5F5E5A</color>      <!-- texto normal -->
+    <color name="cinza_dica">#B4B2A9</color>       <!-- texto de exemplo nas caixas -->
+    <color name="branco">#FFFFFF</color>
+    <color name="vermelho_erro">#A32D2D</color>
+</resources>

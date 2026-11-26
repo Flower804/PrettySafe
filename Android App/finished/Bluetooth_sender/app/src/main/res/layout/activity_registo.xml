@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ecrã de Registo da Pretty Safe -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/branco"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <!-- Voltar ao Login -->
+        <TextView
+            android:id="@+id/tvVoltar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingVertical="8dp"
+            android:text="←  Voltar"
+            android:textColor="@color/rosa_principal"
+            android:textSize="15sp" />
+
+        <!-- Título -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Criar conta"
+            android:textColor="@color/rosa_escuro"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+
+
+        <!-- Nome -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="6dp"
+            android:text="Nome"
+            android:textColor="@color/rosa_escuro"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etNome"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/caixa_texto"
+            android:hint="Dominic"
+            android:inputType="textPersonName|textCapWords"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/cinza_texto"
+            android:textColorHint="@color/cinza_dica"
+            android:textSize="15sp" />
+
+        <!-- Email -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="6dp"
+            android:text="Email"
+            android:textColor="@color/rosa_escuro"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/caixa_texto"
+            android:hint="nome@exemplo.com"
+            android:inputType="textEmailAddress"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/cinza_texto"
+            android:textColorHint="@color/cinza_dica"
+            android:textSize="15sp" />
+
+        <!-- Password -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="6dp"
+            android:text="Password"
+            android:textColor="@color/rosa_escuro"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/caixa_texto"
+            android:hint="Pelo menos 6 caracteres"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/cinza_texto"
+            android:textColorHint="@color/cinza_dica"
+            android:textSize="15sp" />
+
+        <!-- Confirmar password -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="6dp"
+            android:text="Confirmar password"
+            android:textColor="@color/rosa_escuro"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etConfirmar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/caixa_texto"
+            android:hint="Repete a password"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/cinza_texto"
+            android:textColorHint="@color/cinza_dica"
+            android:textSize="15sp" />
+
+        <!-- Mensagem de erro (escondida até haver um erro) -->
+        <TextView
+            android:id="@+id/tvErro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/vermelho_erro"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <!-- Botão Criar conta -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCriarConta"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/botao_rosa"
+            android:text="Criar conta"
+            android:textAllCaps="false"
+            android:textColor="@color/branco"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</ScrollView>

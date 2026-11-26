@@ -29,6 +29,12 @@ portMUX_TYPE commandMux = portMUX_INITIALIZER_UNLOCKED;
 static const int buttonPin = 27;
 static const int LEDPin = 32;
 
+bool ledBlinking = false;
+bool ledState = LOW;
+
+unsigned long previousBlinkTime = 0;
+const unsigned long blinkInterval = 500;
+
 int buttonState = 0;
 int case_state = 0;
 
@@ -149,25 +155,82 @@ int button_pressed = 0;
 //debugging
 int message_deb_sent = 0;
 
-void loop() {
-  buttonState = digitalRead(buttonPin);
+int pressCount = 0;
+int lastButtonState = LOW;
+int stableButtonState = LOW;
 
-  if(buttonState == HIGH){
-    button_pressed = 1;
-    //debugging
-    if(!message_deb_sent){
-      Serial.println("Button pressed");
-      message_deb_sent = 1;
-    }
-  } else {
-    button_pressed = 0;
-    //debugging
-    if(message_deb_sent){
-      Serial.println("button unpressed");
-      message_deb_sent = 0;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 40;
+
+unsigned long lastPressTime = 0;
+const unsigned long pressResetTimeout = 2000; // 2 seconds
+
+void loop() {
+ // Read the physical button
+  int reading = digitalRead(buttonPin);
+
+  // Detect changes in the raw button signal
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  // Only accept the signal after it has remained stable
+  if (millis() - lastDebounceTime >= debounceDelay) {
+
+    // Check if the stable button state changed
+    if (reading != stableButtonState) {
+
+      stableButtonState = reading;
+
+      // Button was pressed (LOW -> HIGH)
+      if (stableButtonState == HIGH) {
+
+        button_pressed = 1;
+
+        // Register the time of this press
+        lastPressTime = millis();
+
+        // Increase the press counter
+        pressCount++;
+
+        Serial.print("Button press count: ");
+        Serial.println(pressCount);
+
+        // Check for five consecutive presses
+        if (pressCount >= 5) {
+
+          Serial.println("Five consecutive presses detected!");
+
+          send_message(1);
+
+          // Reset the counter
+          pressCount = 0;
+        }
+      } else {
+
+        // Button was released
+        button_pressed = 0;
+
+        Serial.println("Button released");
+      }
     }
   }
-  button_counter();
+
+  lastButtonState = reading;
+
+  // Reset the press counter if 2 seconds have passed
+  // since the last button press
+  if (pressCount > 0 &&
+    millis() - lastPressTime >= pressResetTimeout) {
+
+    pressCount = 0;
+
+    Serial.println("Button press count reset - timeout");
+  }
+
+  //button logic
+  button_counter(); 
+  updateLED();
 
   // Check if Android sent a command
   int receivedCommand = -1;
@@ -189,13 +252,19 @@ void loop() {
     switch (receivedCommand) {
 
       case 0:
-        digitalWrite(LEDPin, LOW);
-        Serial.println("LED OFF");
+        ledBlinking = true;
+
+        Serial.println("LED BLINKING");
         break;
 
       case 1:
-        digitalWrite(LEDPin, HIGH);
-        Serial.println("LED ON");
+        // Stop blinking and turn LED off
+        ledBlinking = false;
+        ledState = LOW;
+
+        digitalWrite(LEDPin, LOW);
+
+        Serial.println("LED BLINKING STOPPED");
         break;
 
       default:
@@ -252,6 +321,26 @@ static void send_message(int value){
 
   messageCharacteristic->notify();
   Serial.println("message sent");
+}
+
+void updateLED() {
+
+  // Only blink if the mode is active
+  if (ledBlinking) {
+
+    unsigned long currentTime = millis();
+
+    // Check whether the blink interval has passed
+    if (currentTime - previousBlinkTime >= blinkInterval) {
+
+      previousBlinkTime = currentTime;
+
+      // Toggle LED state
+      ledState = !ledState;
+
+      digitalWrite(LEDPin, ledState);
+    }
+  }
 }
 
 static void LED_state(int state) {
